@@ -8,10 +8,14 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
+
 
 @Component
+@Data
+@RequiredArgsConstructor
 public class SelfmanBot extends TelegramLongPollingBot {
-
 
 		@Value("${bot.token}")
 	    private String botToken;
@@ -19,7 +23,9 @@ public class SelfmanBot extends TelegramLongPollingBot {
 	    @Value("${bot.username}")
 	    private String botUsername;
 	    
-	
+	    final UserSubscriptoinService userSubscriptionService;
+	    
+
 	 @Override
 	    public void onUpdateReceived(Update update) {
 		 
@@ -28,10 +34,10 @@ public class SelfmanBot extends TelegramLongPollingBot {
 	            String messageText = update.getMessage().getText();
 
 	            if (messageText.equals("/start")) {
-	                UserSubscription.subscribeUser(userId);
+	            	userSubscriptionService.subscribeUser(userId);
 	                sendTextMessage(userId, "You have subscribed to updates. To unsubscribe send '/stop'.");
 	            } else if (messageText.equals("/stop")) {
-	                UserSubscription.unsubscribeUser(userId);
+	            	userSubscriptionService.unsubscribeUser(userId);
 	                sendTextMessage(userId, "You have unsubscribed from updates. To subscribe send '/start'.");
 	            }
 	        }
@@ -60,10 +66,11 @@ public class SelfmanBot extends TelegramLongPollingBot {
 	    }
 
 	    public void broadcastMessage(String text) {
-	        for (Long userId : UserSubscription.getSubscribedUsers()) {
+	        for (Long userId : userSubscriptionService.getSubscribedUsers()) {
 	            sendTextMessage(userId, text);
 	        }
 	    }
+	
 	}
 	
 

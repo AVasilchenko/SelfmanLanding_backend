@@ -11,6 +11,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -29,6 +30,8 @@ import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
 import com.google.api.services.sheets.v4.model.ValueRange;
+import com.selfman.landingservice.bot.BotStatus;
+import com.selfman.landingservice.bot.BotStatusRepository;
 import com.selfman.landingservice.bot.SelfmanBot;
 import com.selfman.landingservice.bot.UserSubscription;
 import com.selfman.landingservice.dto.AddCompanyDataDto;
@@ -48,20 +51,28 @@ public class LandingServiceImpl implements LandingService, CommandLineRunner {
 
 	final SelfmanBot selfmanBot;
 	final UserSubscription userSubscription;
+	final BotStatusRepository botStatusRepository;
+	@Value("${bot.statusId}")
+    private String botStatusId;
 
 
-	
 	@Override
+	@EventListener
 	public void run(String... args) throws TelegramApiException {
-		
-		 try {
-			 TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
-			  botsApi.registerBot(selfmanBot);
-			 	
-	        } catch (TelegramApiException e) {
-	            e.printStackTrace();
-	        }
-		
+		 BotStatus botStatus = botStatusRepository.findById(botStatusId).orElse(new BotStatus(botStatusId, false));
+	        if (!botStatus.isRunning()) {
+	        	try {
+					TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
+					botsApi.registerBot(selfmanBot);
+					botStatus.setRunning(true);
+					botStatusRepository.save(botStatus);
+
+				} catch (TelegramApiException e) {
+					e.printStackTrace();
+				}
+			
+		}
+
 	}
 
 	private static Credential getCredentials(final NetHttpTransport HTTP_TRANSPORT) throws IOException {
@@ -111,9 +122,9 @@ public class LandingServiceImpl implements LandingService, CommandLineRunner {
 			ValueRange body = new ValueRange().setValues(data);
 			String range = getRange(service, sheetName, spreadsheetId, "%s!A%d:B%d");
 			service.spreadsheets().values().update(spreadsheetId, range, body).setValueInputOption("RAW").execute();
-			
+
 			selfmanBot.broadcastMessage("Add contact " + addContactDto.getName() + " " + addContactDto.getEmail());
-			
+
 		} catch (IOException | GeneralSecurityException e) {
 			e.printStackTrace();
 		}
@@ -138,14 +149,11 @@ public class LandingServiceImpl implements LandingService, CommandLineRunner {
 			data.add(row);
 			ValueRange body = new ValueRange().setValues(data);
 			service.spreadsheets().values().update(spreadsheetId, range, body).setValueInputOption("RAW").execute();
-			selfmanBot.broadcastMessage("Add data " + addCompanyDataDto.getFirstName() + " " + addCompanyDataDto.getLastName()
-			+ ", company name " + addCompanyDataDto.getCompany());
+			selfmanBot.broadcastMessage("Add data " + addCompanyDataDto.getFirstName() + " "
+					+ addCompanyDataDto.getLastName() + ", company name " + addCompanyDataDto.getCompany());
 		} catch (IOException | GeneralSecurityException e) {
 			e.printStackTrace();
 		}
 	}
 
-	
-	
-	
 }
