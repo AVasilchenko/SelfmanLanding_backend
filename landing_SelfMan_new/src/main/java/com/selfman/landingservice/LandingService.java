@@ -1,7 +1,5 @@
 package com.selfman.landingservice;
 
-import org.springframework.http.ResponseEntity;
-
 import com.selfman.landingservice.dto.AddCompanyDataDto;
 import com.selfman.landingservice.dto.AddContactDto;
 

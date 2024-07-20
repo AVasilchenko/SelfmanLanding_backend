@@ -39,6 +39,7 @@ import com.selfman.landingservice.dto.AddContactDto;
 
 import lombok.RequiredArgsConstructor;
 
+
 @Service
 @RequiredArgsConstructor
 public class LandingServiceImpl implements LandingService, CommandLineRunner {
@@ -54,23 +55,32 @@ public class LandingServiceImpl implements LandingService, CommandLineRunner {
 	final BotStatusRepository botStatusRepository;
 	@Value("${bot.statusId}")
     private String botStatusId;
-
+//	private Credential credential;
 
 	@Override
 	@EventListener
-	public void run(String... args) throws TelegramApiException {
+	public void run(String... args) {
+//		NetHttpTransport HTTP_TRANSPORT;
+//		try {
+//			HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
+//			credential = getCredentials(HTTP_TRANSPORT);
+//		} catch (GeneralSecurityException | IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+		
 		 BotStatus botStatus = botStatusRepository.findById(botStatusId).orElse(new BotStatus(botStatusId, false));
-	        if (!botStatus.isRunning()) {
+		 if (!botStatus.isRunning()) {
 	        	try {
 					TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
 					botsApi.registerBot(selfmanBot);
 					botStatus.setRunning(true);
 					botStatusRepository.save(botStatus);
+					
 
 				} catch (TelegramApiException e) {
 					e.printStackTrace();
 				}
-			
 		}
 
 	}
@@ -87,6 +97,10 @@ public class LandingServiceImpl implements LandingService, CommandLineRunner {
 				clientSecrets, SCOPES)
 				.setDataStoreFactory(new FileDataStoreFactory(new java.io.File(TOKENS_DIRECTORY_PATH)))
 				.setAccessType("offline").build();
+//		LocalServerReceiver receiver = new LocalServerReceiver.Builder()
+//				.setHost("landing-selfman-new.fly.dev")
+//		        .setPort(8888)
+//		        .build();
 		LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(8888).build();
 		return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
 	}
@@ -122,7 +136,6 @@ public class LandingServiceImpl implements LandingService, CommandLineRunner {
 			ValueRange body = new ValueRange().setValues(data);
 			String range = getRange(service, sheetName, spreadsheetId, "%s!A%d:B%d");
 			service.spreadsheets().values().update(spreadsheetId, range, body).setValueInputOption("RAW").execute();
-
 			selfmanBot.broadcastMessage("Add contact " + addContactDto.getName() + " " + addContactDto.getEmail());
 
 		} catch (IOException | GeneralSecurityException e) {
@@ -155,5 +168,6 @@ public class LandingServiceImpl implements LandingService, CommandLineRunner {
 			e.printStackTrace();
 		}
 	}
+
 
 }
