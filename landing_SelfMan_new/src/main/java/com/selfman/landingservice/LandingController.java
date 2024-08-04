@@ -1,10 +1,8 @@
 package com.selfman.landingservice;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.selfman.landingservice.dto.AddCompanyDataDto;
@@ -29,6 +27,8 @@ public class LandingController {
 	public void addCompanyData(@RequestBody AddCompanyDataDto addCompanyDataDto) {
 		landingService.addCompanyData(addCompanyDataDto, spreadsheetId);
 	}
+	
+	
 	
 //	@GetMapping("/Callback")
 //    public String handleOAuth2Callback(@RequestParam("code") String authorizationCode) {

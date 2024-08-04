@@ -1,9 +1,7 @@
 package com.selfman.landingservice;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,21 +15,18 @@ import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
-import com.google.api.client.auth.oauth2.Credential;
-import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
-import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
-import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
-import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.gson.GsonFactory;
-import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
 import com.google.api.services.sheets.v4.model.ValueRange;
-import com.selfman.landingservice.bot.BotStatus;
-import com.selfman.landingservice.bot.BotStatusRepository;
+import com.google.auth.http.HttpCredentialsAdapter;
+import com.google.auth.oauth2.GoogleCredentials;
+import com.google.auth.oauth2.ServiceAccountCredentials;
+//import com.selfman.landingservice.bot.BotStatus;
+//import com.selfman.landingservice.bot.BotStatusRepository;
 import com.selfman.landingservice.bot.SelfmanBot;
 import com.selfman.landingservice.bot.UserSubscription;
 import com.selfman.landingservice.dto.AddCompanyDataDto;
@@ -52,63 +47,42 @@ public class LandingServiceImpl implements LandingService, CommandLineRunner {
 
 	final SelfmanBot selfmanBot;
 	final UserSubscription userSubscription;
-	final BotStatusRepository botStatusRepository;
+//	final BotStatusRepository botStatusRepository;
 	@Value("${bot.statusId}")
-    private String botStatusId;
-//	private Credential credential;
+	private String botStatusId;
 
 	@Override
 	@EventListener
 	public void run(String... args) {
-//		NetHttpTransport HTTP_TRANSPORT;
-//		try {
-//			HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
-//			credential = getCredentials(HTTP_TRANSPORT);
-//		} catch (GeneralSecurityException | IOException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
+//		BotStatus botStatus = botStatusRepository.findById(botStatusId).orElse(new BotStatus(botStatusId, false));
+//		if (!botStatus.isRunning()) {
+			try {
+				TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
+				botsApi.registerBot(selfmanBot);
+
+			} catch (TelegramApiException e) {
+				e.printStackTrace();
+			}
 //		}
-		
-		 BotStatus botStatus = botStatusRepository.findById(botStatusId).orElse(new BotStatus(botStatusId, false));
-		 if (!botStatus.isRunning()) {
-	        	try {
-					TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
-					botsApi.registerBot(selfmanBot);
-					botStatus.setRunning(true);
-					botStatusRepository.save(botStatus);
-					
-
-				} catch (TelegramApiException e) {
-					e.printStackTrace();
-				}
-		}
-
 	}
 
-	private static Credential getCredentials(final NetHttpTransport HTTP_TRANSPORT) throws IOException {
-
-		InputStream in = LandingServiceImpl.class.getResourceAsStream(CREDENTIALS_FILE_PATH);
-		if (in == null) {
-			throw new FileNotFoundException("Resource not found: " + CREDENTIALS_FILE_PATH);
+	private static GoogleCredentials getCredentials(final NetHttpTransport HTTP_TRANSPORT) throws IOException {
+		try (InputStream credentialsStream = Sheets.class.getResourceAsStream("/credentials.json")) {
+		    if (credentialsStream == null) {
+		        throw new IOException("Resource not found: /credentials.json");
+		    }
+		   return ServiceAccountCredentials.fromStream(credentialsStream)
+		            .createScoped(Collections.singleton(SheetsScopes.SPREADSHEETS));
 		}
-		GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
-
-		GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(HTTP_TRANSPORT, JSON_FACTORY,
-				clientSecrets, SCOPES)
-				.setDataStoreFactory(new FileDataStoreFactory(new java.io.File(TOKENS_DIRECTORY_PATH)))
-				.setAccessType("offline").build();
-//		LocalServerReceiver receiver = new LocalServerReceiver.Builder()
-//				.setHost("landing-selfman-new.fly.dev")
-//		        .setPort(8888)
-//		        .build();
-		LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(8888).build();
-		return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
+		
+		
 	}
 
 	private Sheets getSheetsService() throws IOException, GeneralSecurityException {
 		final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
-		return new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
-				.setApplicationName(APPLICATION_NAME).build();
+		return new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, new HttpCredentialsAdapter(getCredentials(HTTP_TRANSPORT)))
+        .setApplicationName(APPLICATION_NAME)
+        .build();
 	}
 
 	public String getRange(Sheets service, String sheetName, String spreadsheetId, String format) {
@@ -168,6 +142,5 @@ public class LandingServiceImpl implements LandingService, CommandLineRunner {
 			e.printStackTrace();
 		}
 	}
-
 
 }

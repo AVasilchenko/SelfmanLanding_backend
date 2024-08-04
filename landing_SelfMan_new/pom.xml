@@ -80,16 +80,23 @@
 			<artifactId>telegrambots-spring-boot-starter</artifactId>
 			<version>5.3.0</version>
 		</dependency>
-	
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-mongodb</artifactId>
 		</dependency>
-<dependency>
+		<dependency>
 			<groupId>org.mongodb</groupId>
 			<artifactId>mongodb-driver-sync</artifactId>
 			<version>5.1.2</version>
 		</dependency>
+		<dependency>
+			<groupId>com.google.auth</groupId>
+			<artifactId>google-auth-library-oauth2-http</artifactId>
+			<version>1.24.0</version>
+		</dependency>
+		
+
 
 	</dependencies>
 

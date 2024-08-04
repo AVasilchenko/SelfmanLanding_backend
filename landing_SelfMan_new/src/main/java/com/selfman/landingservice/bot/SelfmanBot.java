@@ -8,7 +8,8 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 
 
@@ -23,6 +24,24 @@ public class SelfmanBot extends TelegramLongPollingBot {
 	    private String botUsername;
 	    
 	    final UserSubscriptoinService userSubscriptionService;
+//	    final BotStatusRepository botStatusRepository;
+		@Value("${bot.statusId}")
+		private String botStatusId;
+		
+	    
+//	    @PostConstruct
+//	    public void init() {
+//	    	BotStatus botStatus = botStatusRepository.findById(botStatusId).orElse(new BotStatus(botStatusId, false));
+//	    	botStatus.setRunning(true);
+//			botStatusRepository.save(botStatus);
+//	    }
+//
+//	    @PreDestroy
+//	    public void destroy() {
+//	    	BotStatus botStatus = botStatusRepository.findById(botStatusId).orElse(new BotStatus(botStatusId, false));
+//	    	botStatus.setRunning(false);
+//			botStatusRepository.save(botStatus);
+//	    }
 	    
 
 	 @Override
